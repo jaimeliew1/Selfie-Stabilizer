@@ -1,0 +1,1 @@
+ffmpeg -framerate 5  -i "out/%03d.png" -crf 20 -y "MaxAligned.mp4"

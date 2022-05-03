@@ -1,5 +1,9 @@
-
+out/
 data/
+*.mp4
+.vscode/
+shape_predictor_68_face_landmarks.dat
+
 # Created by https://www.toptal.com/developers/gitignore/api/python
 # Edit at https://www.toptal.com/developers/gitignore?templates=python
 
