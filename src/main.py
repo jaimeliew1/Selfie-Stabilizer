@@ -11,7 +11,10 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 from icecream import ic
 import itertools
+import ffmpeg
 from multiprocessing import Pool
+import tempfile
+import shutil
 
 WIDTH = 1000
 
@@ -20,6 +23,7 @@ FN_REF = "data/Max-186.jpg"
 OUT_DIR = Path("out")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 FILE_PATTERN = "Max-*.jpg"
+MOVIE_FN = "MaxAligned.mp4"
 
 fn_shape_predictor = Path("shape_predictor_68_face_landmarks.dat")
 assert fn_shape_predictor.exists()
@@ -146,8 +150,8 @@ def align_landmarks(landmarks, ref):
     return A, out
 
 
-def run_single(fn, landmarks_ref):
-    fn_out = OUT_DIR / (Path(fn).stem + ".png")
+def run_single(fn, landmarks_ref, temp_dir):
+    fn_out = Path(temp_dir) / (Path(fn).stem + ".png")
     image = cv2.imread(fn)
     image = imutils.resize(image, width=1000)
     rows, cols = image.shape[:2]
@@ -167,16 +171,16 @@ def run_single(fn, landmarks_ref):
 
 
 def run_single_multi(x):
-    return run_single(x[0], x[1])
+    return run_single(x[0], x[1], x[2])
 
 
-def run_serial(file_list, landmarks_ref):
+def run_serial(file_list, landmarks_ref, temp_dir):
     for fn in tqdm(file_list):
-        run_single(fn, landmarks_ref)
+        run_single(fn, landmarks_ref, temp_dir)
 
 
-def run_par(file_list, landmarks_ref):
-    params = zip(file_list, itertools.repeat(landmarks_ref))
+def run_par(file_list, landmarks_ref, temp_dir):
+    params = zip(file_list, itertools.repeat(landmarks_ref), itertools.repeat(temp_dir))
     with Pool() as pool:
         for _ in tqdm(pool.imap(run_single_multi, params), total=len(file_list)):
             pass
@@ -189,6 +193,12 @@ def rename_image_files(directory):
         file.rename(Path(directory) / f"{i:03d}.png")
 
 
+def write_video(in_glob, video_fn, framerate=5, verbose=False):
+    ffmpeg.input(in_glob, pattern_type="glob", framerate=framerate).output(
+        video_fn
+    ).overwrite_output().run(quiet=not verbose)
+
+
 if __name__ == "__main__":
     file_list = [x.as_posix() for x in IMAGE_DIR.glob(FILE_PATTERN)]
     file_list.sort()
@@ -196,10 +206,15 @@ if __name__ == "__main__":
     # reference landmarks
     image = cv2.imread(FN_REF)
     image = imutils.resize(image, width=1000)
-    print(image.shape)
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     landmarks_ref, _, _ = get_landmarks(gray)
 
     # run_serial(file_list, landmarks_ref)
-    run_par(file_list, landmarks_ref)
-    rename_image_files("out/")
+    with tempfile.TemporaryDirectory() as temp_dir:
+
+        run_par(file_list, landmarks_ref, temp_dir)
+        rename_image_files(temp_dir)
+
+        write_video(temp_dir + "/*.png", MOVIE_FN)
+        shutil.copytree(temp_dir, OUT_DIR, dirs_exist_ok=True)
+
