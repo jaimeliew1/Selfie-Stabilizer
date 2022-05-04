@@ -153,7 +153,7 @@ def get_reference_landmarks(fn):
     return landmarks_ref
 
 
-def run_single(fn, landmarks_ref, temp_dir, landmarks=None):
+def run_single(fn, landmarks_ref, temp_dir, show_landmarks=None):
     fn_out = Path(temp_dir) / (Path(fn).stem + ".png")
     image = cv2.imread(fn)
     image = imutils.resize(image, width=1000)
@@ -170,7 +170,10 @@ def run_single(fn, landmarks_ref, temp_dir, landmarks=None):
         return
 
     aligned_numpy = cv2.cvtColor(aligned, cv2.COLOR_BGR2RGB)
-    plot(aligned_numpy, save=fn_out, landmarks=landmarks_aligned)
+    if show_landmarks:
+        plot(aligned_numpy, save=fn_out, landmarks=landmarks_aligned)
+    else:
+        plot(aligned_numpy, save=fn_out)
 
 
 def run_single_multi(x):

@@ -37,10 +37,10 @@ def stabilize_selfies(
 @click.command()
 @click.argument("input_dir", type=click.Path(exists=True, file_okay=False))
 @click.argument("ref_image", type=click.Path(exists=True, dir_okay=False))
-@click.option("-o", "--output", default="out.mp4")
-@click.option("--dump_images", is_flag=False, flag_value="dump", default=None)
-@click.option("-p", "--parallel", is_flag=True, default=True, help="Run in parallel")
-@click.option("--show_landmarks", default=False)
+@click.option("-o", "--output", default="out.mp4", help="Filename of output video.")
+@click.option("--dump_images", is_flag=False, flag_value="dump", default=None, help="Save stabilized images to `dump` folder.")
+@click.option("-p", "--parallel", is_flag=True, default=True, help="Use parallel processing.")
+@click.option("--show_landmarks", default=False, help="Draw facial landmarks.")
 def cli(input_dir, ref_image, output, dump_images, parallel, show_landmarks):
     """
     \b
@@ -49,6 +49,9 @@ def cli(input_dir, ref_image, output, dump_images, parallel, show_landmarks):
     \___ \ / _ \ | |_| |/ _ \ \___ \| __/ _` | '_ \| | | |_  / _ \ '__|
      ___) |  __/ |  _| |  __/  ___) | || (_| | |_) | | | |/ /  __/ |
     |____/ \___|_|_| |_|\___| |____/ \__\__,_|_.__/|_|_|_/___\___|_|
+
+    
+    Converts a folder of selfie images into a stabilized video.
     """
     stabilize_selfies(
         input_dir, ref_image, output, dump_images, parallel, show_landmarks

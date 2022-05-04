@@ -5,7 +5,7 @@ description = "Converts a folder of selfie images into a stabilized video."
 authors = ["Jaime <jaimeliew1@gmail.com>"]
 
 [tool.poetry.scripts]
-selfieboi = 'selfie_stabilizer.main:cli'
+selfie-stabilizer = 'selfie_stabilizer.main:cli'
 
 [tool.poetry.dependencies]
 python = "3.9"

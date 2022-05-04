@@ -1,1 +1,1 @@
-poetry run selfieboi data data/Max-186.jpg --dump_images
+poetry run selfie-stabilizer data data/Max-186.jpg --dump_images
