@@ -1,1 +1,1 @@
-ffmpeg -framerate 5  -i "out/%03d.png" -crf 20 -y "MaxAligned.mp4"
+poetry run selfieboi data data/Max-186.jpg --dump_images

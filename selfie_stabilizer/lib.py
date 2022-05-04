@@ -1,29 +1,22 @@
 """
 https://en.wikipedia.org/wiki/Orthogonal_Procrustes_problem
 """
-from pathlib import Path
-import numpy as np
-import dlib
-from tqdm import tqdm
-import imutils
-import cv2
-import matplotlib.pyplot as plt
-from matplotlib.patches import Rectangle
-from icecream import ic
 import itertools
-import ffmpeg
 from multiprocessing import Pool
-import tempfile
-import shutil
+from pathlib import Path
+
+import cv2
+import dlib
+import ffmpeg
+import imutils
+import matplotlib.pyplot as plt
+import numpy as np
+from icecream import ic
+from matplotlib.patches import Rectangle
+from tqdm import tqdm
 
 WIDTH = 1000
 
-IMAGE_DIR = Path("data")
-FN_REF = "data/Max-186.jpg"
-OUT_DIR = Path("out")
-OUT_DIR.mkdir(parents=True, exist_ok=True)
-FILE_PATTERN = "Max-*.jpg"
-MOVIE_FN = "MaxAligned.mp4"
 
 fn_shape_predictor = Path("shape_predictor_68_face_landmarks.dat")
 assert fn_shape_predictor.exists()
@@ -150,7 +143,17 @@ def align_landmarks(landmarks, ref):
     return A, out
 
 
-def run_single(fn, landmarks_ref, temp_dir):
+def get_reference_landmarks(fn):
+    # reference landmarks
+    image = cv2.imread(fn)
+    image = imutils.resize(image, width=1000)
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    landmarks_ref, _, _ = get_landmarks(gray)
+
+    return landmarks_ref
+
+
+def run_single(fn, landmarks_ref, temp_dir, landmarks=None):
     fn_out = Path(temp_dir) / (Path(fn).stem + ".png")
     image = cv2.imread(fn)
     image = imutils.resize(image, width=1000)
@@ -167,20 +170,25 @@ def run_single(fn, landmarks_ref, temp_dir):
         return
 
     aligned_numpy = cv2.cvtColor(aligned, cv2.COLOR_BGR2RGB)
-    plot(aligned_numpy, save=fn_out)
+    plot(aligned_numpy, save=fn_out, landmarks=landmarks_aligned)
 
 
 def run_single_multi(x):
-    return run_single(x[0], x[1], x[2])
+    return run_single(x[0], x[1], x[2], x[3])
 
 
-def run_serial(file_list, landmarks_ref, temp_dir):
+def run_serial(file_list, landmarks_ref, temp_dir, landmarks):
     for fn in tqdm(file_list):
-        run_single(fn, landmarks_ref, temp_dir)
+        run_single(fn, landmarks_ref, temp_dir, landmarks)
 
 
-def run_par(file_list, landmarks_ref, temp_dir):
-    params = zip(file_list, itertools.repeat(landmarks_ref), itertools.repeat(temp_dir))
+def run_par(file_list, landmarks_ref, temp_dir, landmarks):
+    params = zip(
+        file_list,
+        itertools.repeat(landmarks_ref),
+        itertools.repeat(temp_dir),
+        itertools.repeat(landmarks),
+    )
     with Pool() as pool:
         for _ in tqdm(pool.imap(run_single_multi, params), total=len(file_list)):
             pass
@@ -197,24 +205,3 @@ def write_video(in_glob, video_fn, framerate=5, verbose=False):
     ffmpeg.input(in_glob, pattern_type="glob", framerate=framerate).output(
         video_fn
     ).overwrite_output().run(quiet=not verbose)
-
-
-if __name__ == "__main__":
-    file_list = [x.as_posix() for x in IMAGE_DIR.glob(FILE_PATTERN)]
-    file_list.sort()
-
-    # reference landmarks
-    image = cv2.imread(FN_REF)
-    image = imutils.resize(image, width=1000)
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    landmarks_ref, _, _ = get_landmarks(gray)
-
-    # run_serial(file_list, landmarks_ref)
-    with tempfile.TemporaryDirectory() as temp_dir:
-
-        run_par(file_list, landmarks_ref, temp_dir)
-        rename_image_files(temp_dir)
-
-        write_video(temp_dir + "/*.png", MOVIE_FN)
-        shutil.copytree(temp_dir, OUT_DIR, dirs_exist_ok=True)
-
