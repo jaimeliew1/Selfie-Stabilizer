@@ -39,8 +39,8 @@ def stabilize_selfies(
 @click.argument("ref_image", type=click.Path(exists=True, dir_okay=False))
 @click.option("-o", "--output", default="out.mp4", help="Filename of output video.")
 @click.option("--dump_images", is_flag=False, flag_value="dump", default=None, help="Save stabilized images to `dump` folder.")
-@click.option("-p", "--parallel", is_flag=True, default=True, help="Use parallel processing.")
-@click.option("--show_landmarks", default=False, help="Draw facial landmarks.")
+@click.option("-p", "--parallel", is_flag=True, default=True, help="Use parallel processing (default=True).")
+@click.option("--show_landmarks", default=False, help="Draw facial landmarks (default=False).")
 def cli(input_dir, ref_image, output, dump_images, parallel, show_landmarks):
     """
     \b

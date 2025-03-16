@@ -11,7 +11,6 @@ import ffmpeg
 import imutils
 import matplotlib.pyplot as plt
 import numpy as np
-from icecream import ic
 from matplotlib.patches import Rectangle
 from tqdm import tqdm
 
